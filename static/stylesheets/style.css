@@ -528,6 +528,15 @@ p.card-bio {
   z-index: 1;
 }
 
+.like-button {
+  border: none;
+  background-color: transparent;
+}
+
+.like-button > .bi {
+  color: tomato;
+}
+
 .single-message {
   font-size: 27px;
   line-height: 32px;
@@ -553,4 +562,8 @@ p.card-bio {
 
 .message-404 input {
   flex: 1;
+}
+
+.like-button {
+  z-index: 1000;
 }

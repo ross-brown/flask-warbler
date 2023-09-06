@@ -21,6 +21,24 @@
             </span>
         <p>{{ message.text }}</p>
       </div>
+      {% if user.id != g.user.id %}
+        {% if msg in g.user.liked_messages %}
+          <form action="/users/1" class="messages-like">
+              {{ form.hidden_tag() }}
+              <button type="submit" class="like-button">
+                <i class="bi bi-heart-fill"></i>
+              </button>
+            </form>
+            {% else %}
+            <form action="like" method="POST" class="messages-like">
+              {{ form.hidden_tag() }}
+              <button class="like-button">
+                <i class="bi bi-heart"></i>
+              </button>
+            </form>
+            {% endif %}
+          </form>
+      {% endif %}
     </li>
 
     {% endfor %}
