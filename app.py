@@ -17,7 +17,7 @@ app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 app.config['SQLALCHEMY_ECHO'] = False
-app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = True
+app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 toolbar = DebugToolbarExtension(app)
 
@@ -127,9 +127,9 @@ def logout():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    form = g.csrf_form
+    # form = g.csrf_form
 
-    if form.validate_on_submit():
+    if g.csrf_form.validate_on_submit():
         do_logout()
         flash('Logged out successfully!', 'success')
 
@@ -148,7 +148,7 @@ def list_users():
     Can take a 'q' param in querystring to search by that username.
     """
 
-    form = g.csrf_form
+    # form = g.csrf_form
 
     if not g.user:
         flash("Access unauthorized.", "danger")
@@ -161,14 +161,14 @@ def list_users():
     else:
         users = User.query.filter(User.username.like(f"%{search}%")).all()
 
-    return render_template('users/index.html', users=users, form=form)
+    return render_template('users/index.html', users=users, form=g.csrf_form)
 
 
 @app.get('/users/<int:user_id>')
 def show_user(user_id):
     """Show user profile."""
 
-    form = g.csrf_form
+    # form = g.csrf_form
 
     if not g.user:
         flash("Access unauthorized.", "danger")
@@ -176,35 +176,35 @@ def show_user(user_id):
 
     user = User.query.get_or_404(user_id)
 
-    return render_template('users/show.html', user=user, form=form)
+    return render_template('users/show.html', user=user, form=g.csrf_form)
 
 
 @app.get('/users/<int:user_id>/following')
 def show_following(user_id):
     """Show list of people this user is following."""
 
-    form = g.csrf_form
+    # form = g.csrf_form
 
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
     user = User.query.get_or_404(user_id)
-    return render_template('users/following.html', user=user, form=form)
+    return render_template('users/following.html', user=user, form=g.csrf_form)
 
 
 @app.get('/users/<int:user_id>/followers')
 def show_followers(user_id):
     """Show list of followers of this user."""
 
-    form = g.csrf_form
+    # form = g.csrf_form
 
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
     user = User.query.get_or_404(user_id)
-    return render_template('users/followers.html', user=user, form=form)
+    return render_template('users/followers.html', user=user, form=g.csrf_form)
 
 
 @app.post('/users/follow/<int:follow_id>')
@@ -217,9 +217,9 @@ def start_following(follow_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    form = g.csrf_form
+    # form = g.csrf_form
 
-    if form.validate_on_submit():
+    if g.csrf_form.validate_on_submit():
         followed_user = User.query.get_or_404(follow_id)
         g.user.following.append(followed_user)
         db.session.commit()
@@ -239,9 +239,9 @@ def stop_following(follow_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    form = g.csrf_form
+    # form = g.csrf_form
 
-    if form.validate_on_submit():
+    if g.csrf_form.validate_on_submit():
         followed_user = User.query.get_or_404(follow_id)
         g.user.following.remove(followed_user)
         db.session.commit()
@@ -262,7 +262,7 @@ def profile():
     form = UserEditForm(obj=g.user)
 
     if form.validate_on_submit():
-        #TODO: Can we find a cleaner way to get this data and reuse it in else block?
+        # TODO: Can we find a cleaner way to get this data and reuse it in else block?
         username = form.username.data
         email = form.email.data
         image_url = form.image_url.data
@@ -307,9 +307,9 @@ def delete_user():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    form = g.csrf_form
+    # form = g.csrf_form
 
-    if form.validate_on_submit():
+    if g.csrf_form.validate_on_submit():
         do_logout()
 
         db.session.delete(g.user)
@@ -350,14 +350,14 @@ def add_message():
 def show_message(message_id):
     """Show a message."""
 
-    form = g.csrf_form
+    # form = g.csrf_form
 
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
     msg = Message.query.get_or_404(message_id)
-    return render_template('messages/show.html', message=msg, form=form)
+    return render_template('messages/show.html', message=msg, form=g.csrf_form)
 
 
 @app.post('/messages/<int:message_id>/delete')
@@ -372,9 +372,9 @@ def delete_message(message_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    form = g.csrf_form
+    # form = g.csrf_form
 
-    if form.validate_on_submit():
+    if g.csrf_form.validate_on_submit():
 
         msg = Message.query.get_or_404(message_id)
         db.session.delete(msg)
@@ -397,20 +397,21 @@ def homepage():
     - logged in: 100 most recent messages of self & followed_users
     """
 
-    form = g.csrf_form
+    # form = g.csrf_form
 
     if g.user:
         messages = (Message
                     .query
-                    .filter(Message.user in g.user.following)
+                    .filter((Message.user_id.in_([f.id for f in g.user.following]))
+                            | (Message.user == g.user))
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
 
-        return render_template('home.html', messages=messages, form=form)
+        return render_template('home.html', messages=messages, form=g.csrf_form)
 
     else:
-        return render_template('home-anon.html', form=form)
+        return render_template('home-anon.html', form=g.csrf_form)
 
 
 @app.after_request
