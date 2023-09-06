@@ -31,13 +31,13 @@ body.error-404 {
   z-index: 9999;
 }
 
-.navbar a {
+.navbar a, #logout {
   color: #66757f;
   font-size: 13px;
   font-weight: bold;
 }
 
-.navbar a:hover {
+.navbar a:hover, #logout:hover {
   color: #1c94e0;
 }
 
@@ -101,6 +101,12 @@ nav form.navbar-form {
 #search:focus {
   box-shadow: none;
   border: 2px solid #007bff;
+}
+
+#logout {
+  border: none;
+  background-color: transparent;
+  text-decoration: underline;
 }
 
 /* on "onboarding" pages (signup & login), the navbar is

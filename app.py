@@ -262,38 +262,32 @@ def profile():
     form = UserEditForm(obj=g.user)
 
     if form.validate_on_submit():
-        # TODO: Can we find a cleaner way to get this data and reuse it in else block?
-        username = form.username.data
-        email = form.email.data
-        image_url = form.image_url.data
-        header_image_url = form.header_image_url.data
-        bio = form.bio.data
+
+        form_fields = {"username": form.username.data,
+                       "email": form.email.data,
+                       "image_url": form.image_url.data,
+                       "header_image_url": form.header_image_url.data,
+                       "bio": form.bio.data}
 
         if User.authenticate(g.user.username, form.password.data):
-            g.user.username = username
-            g.user.email = email
-            g.user.image_url = image_url
-            g.user.header_image_url = header_image_url
-            g.user.bio = bio
+            g.user.username = form_fields["username"]
+            g.user.email = form_fields["email"]
+            g.user.image_url = form_fields["image_url"]
+            g.user.header_image_url = form_fields["header_image_url"]
+            g.user.bio = form_fields["bio"]
 
             db.session.commit()
 
             flash('Profile updated successfully!', 'success')
             return redirect(F"/users/{g.user.id}")
         else:
-            form = UserEditForm(obj={
-                username: username,
-                email: email,
-                image_url: image_url,
-                header_image_url: header_image_url,
-                bio: bio
-            })
+            form = UserEditForm(obj=form_fields)
 
             flash('Password incorrect!', 'danger')
-            return render_template('/users/edit.html', form=form)
+            return render_template('/users/edit.html', form=form, user=g.user)
 
     else:
-        return render_template('/users/edit.html', form=form)
+        return render_template('/users/edit.html', form=form, user=g.user)
 
 
 @app.post('/users/delete')
