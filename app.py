@@ -7,7 +7,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
 from forms import UserAddForm, LoginForm, MessageForm, CSRFForm, UserEditForm
-from models import db, connect_db, User, Message
+from models import db, connect_db, User, Message, Like
 
 load_dotenv()
 

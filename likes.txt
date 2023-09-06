@@ -1,0 +1,11 @@
+-define model a for likes
+    -only like other peoples w's
+    -a one to many
+
+-anywhere there is a warble - it should be able to be liked? could be button or on page
+-should have star to like warbles, and should be empty or filled depending on if it is liked
+    -do in jinja
+
+-profile page should show like warbles
+    -update profile page
+    -add template for like warbles
