@@ -32,6 +32,15 @@ class UserAddForm(FlaskForm):
         validators=[Optional(), URL(), Length(max=255)]
     )
 
+class UserEditForm(UserAddForm):
+    """Edit user form."""
+
+    header_image_url = StringField(
+        '(Optional) Header URL',
+        validators=[Optional(), URL(), Length(max=255)])
+
+    bio = TextAreaField('User Bio', validators=[Optional()])
+
 
 class LoginForm(FlaskForm):
     """Login form."""
