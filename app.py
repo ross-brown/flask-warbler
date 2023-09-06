@@ -123,19 +123,14 @@ def login():
 def logout():
     """Handle logout of user and redirect to homepage."""
 
-    if not g.user:
+    if not g.user or not g.csrf_form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    # form = g.csrf_form
+    do_logout()
+    flash('Logged out successfully!', 'success')
 
-    if g.csrf_form.validate_on_submit():
-        do_logout()
-        flash('Logged out successfully!', 'success')
-
-        return redirect('/login')
-
-    raise Unauthorized()
+    return redirect('/login')
 
 
 ##############################################################################
@@ -147,8 +142,6 @@ def list_users():
 
     Can take a 'q' param in querystring to search by that username.
     """
-
-    # form = g.csrf_form
 
     if not g.user:
         flash("Access unauthorized.", "danger")
@@ -168,8 +161,6 @@ def list_users():
 def show_user(user_id):
     """Show user profile."""
 
-    # form = g.csrf_form
-
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
@@ -183,8 +174,6 @@ def show_user(user_id):
 def show_following(user_id):
     """Show list of people this user is following."""
 
-    # form = g.csrf_form
-
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
@@ -196,8 +185,6 @@ def show_following(user_id):
 @app.get('/users/<int:user_id>/followers')
 def show_followers(user_id):
     """Show list of followers of this user."""
-
-    # form = g.csrf_form
 
     if not g.user:
         flash("Access unauthorized.", "danger")
@@ -213,19 +200,16 @@ def start_following(follow_id):
 
     Redirect to following page for the current for the current user.
     """
-    if not g.user:
+
+    if not g.user or not g.csrf_form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    # form = g.csrf_form
+    followed_user = User.query.get_or_404(follow_id)
+    g.user.following.append(followed_user)
+    db.session.commit()
 
-    if g.csrf_form.validate_on_submit():
-        followed_user = User.query.get_or_404(follow_id)
-        g.user.following.append(followed_user)
-        db.session.commit()
-        return redirect(f"/users/{g.user.id}/following")
-    else:
-        raise Unauthorized()
+    return redirect(f"/users/{g.user.id}/following")
 
 
 @app.post('/users/stop-following/<int:follow_id>')
@@ -235,24 +219,19 @@ def stop_following(follow_id):
     Redirect to following page for the current for the current user.
     """
 
-    if not g.user:
+    if not g.user or not g.csrf_form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    # form = g.csrf_form
+    followed_user = User.query.get_or_404(follow_id)
+    g.user.following.remove(followed_user)
+    db.session.commit()
 
-    if g.csrf_form.validate_on_submit():
-        followed_user = User.query.get_or_404(follow_id)
-        g.user.following.remove(followed_user)
-        db.session.commit()
-
-        return redirect(f"/users/{g.user.id}/following")
-    else:
-        raise Unauthorized()
+    return redirect(f"/users/{g.user.id}/following")
 
 
 @app.route('/users/profile', methods=["GET", "POST"])
-def profile():
+def update_profile():
     """Update profile for current user."""
 
     if not g.user:
@@ -286,8 +265,7 @@ def profile():
             flash('Password incorrect!', 'danger')
             return render_template('/users/edit.html', form=form, user=g.user)
 
-    else:
-        return render_template('/users/edit.html', form=form, user=g.user)
+    return render_template('/users/edit.html', form=form, user=g.user)
 
 
 @app.post('/users/delete')
@@ -296,22 +274,18 @@ def delete_user():
 
     Redirect to signup page.
     """
-
-    if not g.user:
+    if not g.user or not g.csrf_form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    # form = g.csrf_form
+    Message.query.filter_by(user_id=g.user.id).delete()
+    db.session.delete(g.user)
+    db.session.commit()
 
-    if g.csrf_form.validate_on_submit():
-        do_logout()
+    do_logout()
 
-        db.session.delete(g.user)
-        db.session.commit()
-
-        return redirect("/signup")
-    else:
-        raise Unauthorized()
+    flash("Account deleted successfully!", "success")
+    return redirect("/signup")
 
 
 ##############################################################################
@@ -344,8 +318,6 @@ def add_message():
 def show_message(message_id):
     """Show a message."""
 
-    # form = g.csrf_form
-
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
@@ -362,21 +334,15 @@ def delete_message(message_id):
     Redirect to user page on success.
     """
 
-    if not g.user:
+    if not g.user or not g.csrf_form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    # form = g.csrf_form
+    msg = Message.query.get_or_404(message_id)
+    db.session.delete(msg)
+    db.session.commit()
 
-    if g.csrf_form.validate_on_submit():
-
-        msg = Message.query.get_or_404(message_id)
-        db.session.delete(msg)
-        db.session.commit()
-
-        return redirect(f"/users/{g.user.id}")
-    else:
-        raise Unauthorized()
+    return redirect(f"/users/{g.user.id}")
 
 
 ##############################################################################
@@ -391,21 +357,19 @@ def homepage():
     - logged in: 100 most recent messages of self & followed_users
     """
 
-    # form = g.csrf_form
-
     if g.user:
+        following_ids = [f.id for f in g.user.following] + [g.user.id]
+
         messages = (Message
                     .query
-                    .filter((Message.user_id.in_([f.id for f in g.user.following]))
-                            | (Message.user == g.user))
+                    .filter((Message.user_id.in_(following_ids)))
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
 
         return render_template('home.html', messages=messages, form=g.csrf_form)
 
-    else:
-        return render_template('home-anon.html', form=g.csrf_form)
+    return render_template('home-anon.html', form=g.csrf_form)
 
 
 @app.after_request
