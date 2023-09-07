@@ -55,12 +55,14 @@
           <span class="text-muted">{{ msg.timestamp.strftime('%d %B %Y') }}</span>
           <p>{{ msg.text }}</p>
         </div>
+        {% if msg.user_id != g.user.id %}
         {% if msg in g.user.liked_messages %}
         <form action="/users/unlike/{{ msg.id }}" method="POST" class="messages-like">
           {{ form.hidden_tag() }}
           <button type="submit" class="like-button">
             <i class="bi bi-heart-fill"></i>
           </button>
+          {{ msg.users_who_liked | length }}
         </form>
         {% else %}
         <form action="/users/like/{{ msg.id }}" method="POST" class="messages-like">
@@ -68,7 +70,9 @@
           <button class="like-button">
             <i class="bi bi-heart"></i>
           </button>
+          {{ msg.users_who_liked | length }}
         </form>
+        {% endif %}
         {% endif %}
       </li>
       {% endfor %}

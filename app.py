@@ -230,6 +230,18 @@ def stop_following(follow_id):
     return redirect(f"/users/{g.user.id}/following")
 
 
+@app.get('/users/<int:user_id>/likes')
+def show_likes(user_id):
+    """Show list of likes of this user."""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    user = User.query.get_or_404(user_id)
+    return render_template('users/likes.html', user=user, form=g.csrf_form)
+
+
 @app.post('/users/like/<int:message_id>')
 def like_message(message_id):
     """Like a specific message and redirect."""
@@ -239,8 +251,10 @@ def like_message(message_id):
         return redirect("/")
 
     message = Message.query.get_or_404(message_id)
-    g.user.liked_messages.append(message)
-    db.session.commit()
+
+    if message.user_id != g.user.id:
+        g.user.liked_messages.append(message)
+        db.session.commit()
 
     return redirect(request.referrer)
 
