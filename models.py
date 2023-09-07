@@ -185,8 +185,6 @@ class Message(db.Model):
         nullable=False,
     )
 
-    # def get_like_count(self):
-
 
 class Like(db.Model):
     """Model for liked messages relation."""

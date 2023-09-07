@@ -40,23 +40,31 @@
             {% endif %}
           </div>
           {% if message.user.id != g.user.id %}
-          {% if message in g.user.liked_messages %}
-          <form action="/users/unlike/{{ message.id }}" method="POST" class="messages-like-bottom">
-            {{ form.hidden_tag() }}
-            <button type="submit" class="like-button">
-              <i class="bi bi-heart-fill"></i>
+            {% if message in g.user.liked_messages %}
+            <form action="/users/unlike/{{ message.id }}" method="POST" class="messages-like-bottom">
+              {{ form.hidden_tag() }}
+              <button type="submit" class="like-button">
+                <i class="bi bi-heart-fill"></i>
+              </button>
               {{ message.users_who_liked | length }}
-            </button>
-          </form>
+            </form>
+            {% else %}
+            <form action="/users/like/{{ message.id }}" method="POST" class="messages-like-bottom">
+              {{ form.hidden_tag() }}
+              <button class="like-button">
+                <i class="bi bi-heart"></i>
+              </button>
+              {{ message.users_who_liked | length }}
+            </form>
+            {% endif %}
           {% else %}
           <form action="/users/like/{{ message.id }}" method="POST" class="messages-like-bottom">
             {{ form.hidden_tag() }}
-            <button class="like-button">
+            <button class="like-button  disabled-like">
               <i class="bi bi-heart"></i>
-              {{ message.users_who_liked | length }}
             </button>
+            {{ message.users_who_liked | length }}
           </form>
-          {% endif %}
           {% endif %}
           <p class="single-message">{{ message.text }}</p>
           <span class="text-muted">

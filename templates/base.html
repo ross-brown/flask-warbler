@@ -72,7 +72,7 @@
 <div class="container">
 
   {% for category, message in get_flashed_messages(with_categories=True) %}
-    <div class="alert alert-{{ category }}">{{ message }}</div>
+    <div class="alert alert-{{ category }}" style="z-index: 1">{{ message }}</div>
   {% endfor %}
 
   {% block content %}

@@ -24,6 +24,7 @@
         <button type="submit" class="like-button">
           <i class="bi bi-heart-fill"></i>
         </button>
+        {{ message.users_who_liked | length }}
       </form>
     </li>
     {% endfor %}

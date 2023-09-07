@@ -537,6 +537,10 @@ p.card-bio {
   color: tomato;
 }
 
+.disabled-like > .bi {
+  color: grey
+}
+
 .single-message {
   font-size: 27px;
   line-height: 32px;

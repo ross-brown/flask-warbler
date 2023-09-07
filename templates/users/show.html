@@ -1,45 +1,55 @@
 {% extends 'users/detail.html' %}
 {% block user_details %}
 <div class="col-sm-6">
-  <ul class="list-group" id="messages">
+	<ul class="list-group" id="messages">
 
-    {% for message in user.messages %}
+		{% for message in user.messages %}
 
-    <li class="list-group-item">
-      <a href="/messages/{{ message.id }}" class="message-link"></a>
+		<li class="list-group-item">
+			<a href="/messages/{{ message.id }}" class="message-link"></a>
 
-      <a href="/users/{{ user.id }}">
-        <img src="{{ user.image_url }}" alt="user image" class="timeline-image">
-      </a>
+			<a href="/users/{{ user.id }}">
+				<img src="{{ user.image_url }}" alt="user image" class="timeline-image">
+			</a>
 
-      <div class="message-area">
-        <a href="/users/{{ user.id }}">@{{ user.username }}</a>
-        <span class="text-muted">
-          {{ message.timestamp.strftime('%d %B %Y') }}
-        </span>
-        <p>{{ message.text }}</p>
-      </div>
-      {% if user.id != g.user.id %}
-      {% if message in g.user.liked_messages %}
-      <form action="/users/unlike/{{ message.id }}" method="POST" class="messages-like">
-        {{ form.hidden_tag() }}
-        <button type="submit" class="like-button">
-          <i class="bi bi-heart-fill"></i>
-        </button>
-      </form>
-      {% else %}
-      <form action="/users/like/{{ message.id }}" method="POST" class="messages-like">
-        {{ form.hidden_tag() }}
-        <button class="like-button">
-          <i class="bi bi-heart"></i>
-        </button>
-      </form>
-      {% endif %}
-      {% endif %}
-    </li>
+			<div class="message-area">
+				<a href="/users/{{ user.id }}">@{{ user.username }}</a>
+				<span class="text-muted">
+					{{ message.timestamp.strftime('%d %B %Y') }}
+				</span>
+				<p>{{ message.text }}</p>
+			</div>
+			{% if user.id != g.user.id %}
+				{% if message in g.user.liked_messages %}
+				<form action="/users/unlike/{{ message.id }}" method="POST" class="messages-like">
+					{{ form.hidden_tag() }}
+					<button type="submit" class="like-button">
+						<i class="bi bi-heart-fill"></i>
+					</button>
+					{{ message.users_who_liked | length }}
+				</form>
+				{% else %}
+				<form action="/users/like/{{ message.id }}" method="POST" class="messages-like">
+					{{ form.hidden_tag() }}
+					<button class="like-button">
+						<i class="bi bi-heart"></i>
+					</button>
+					{{ message.users_who_liked | length }}
+				</form>
+				{% endif %}
+			{% else %}
+			<form action="/users/like/{{ message.id }}" method="POST" class="messages-like">
+				{{ form.hidden_tag() }}
+				<button class="like-button  disabled-like">
+					<i class="bi bi-heart"></i>
+				</button>
+				{{ message.users_who_liked | length }}
+			</form>
+			{% endif %}
+		</li>
 
-    {% endfor %}
+		{% endfor %}
 
-  </ul>
+	</ul>
 </div>
 {% endblock %}

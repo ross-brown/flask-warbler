@@ -255,6 +255,8 @@ def like_message(message_id):
     if message.user_id != g.user.id:
         g.user.liked_messages.append(message)
         db.session.commit()
+    else:
+        flash('You cannot like your own Warble!', 'danger')
 
     return redirect(request.referrer)
 
@@ -268,6 +270,7 @@ def unlike_message(message_id):
         return redirect("/")
 
     message = Message.query.get_or_404(message_id)
+
     g.user.liked_messages.remove(message)
     db.session.commit()
 
