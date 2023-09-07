@@ -383,7 +383,8 @@ def delete_message(message_id):
     Redirect to user page on success.
     """
 
-    if not g.user or not g.csrf_form.validate_on_submit():
+    if not g.user or not g.csrf_form.validate_on_submit() or \
+         message_id not in [m.id for m in g.user.messages]:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
