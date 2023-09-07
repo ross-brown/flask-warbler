@@ -73,12 +73,17 @@ class UserModelTestCase(TestCase):
         User.signup("u1", "u3@gmail.com", "password", None)
 
         with self.assertRaises(IntegrityError):
-            bad_user = User.signup("u3", "u3@gmail.com", "password", None)
+            User.signup("u3", "u3@gmail.com", "password", None)
             db.session.commit()
 
 
     def test_user_authenticate(self):
-        user = User.authenticate("u1", "password")
+        """Test that authenticate method works as expected."""
 
+        # Authenticate returns user when correct credentials input.
+        user = User.authenticate("u1", "password")
         self.assertEqual(user, User.query.get(user.id))
 
+        #Returns False when incorrect username or password
+        self.assertFalse(User.authenticate('tuckerdiane', 'ewrghetheat'))
+        self.assertFalse(User.authenticate('rwthejnmhraet', 'password'))
