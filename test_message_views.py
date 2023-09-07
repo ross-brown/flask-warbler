@@ -8,7 +8,7 @@
 import os
 from unittest import TestCase
 
-from models import db, Message, User
+from models import db, Message, User, Like
 
 # BEFORE we import our app, let's set an environmental variable
 # to use a different database for tests (we need to do this
@@ -41,6 +41,7 @@ app.config['WTF_CSRF_ENABLED'] = False
 
 class MessageBaseViewTestCase(TestCase):
     def setUp(self):
+        Like.query.delete()
         Message.query.delete()
         User.query.delete()
 
@@ -50,6 +51,9 @@ class MessageBaseViewTestCase(TestCase):
 
         m1 = Message(text="m1-text", user_id=u1.id)
         m2 = Message(text="m2_text", user_id=u2.id)
+
+        u1.following.append(u2)
+
         db.session.add_all([m1, m2])
         db.session.commit()
 
@@ -72,13 +76,13 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
         # we need to use the changing-session trick:
         with self.client as c:
 
-            #Testing adding a message when not logged in
-            resp = c.post("/messages/new", data={"text": "World"}, follow_redirects=True)
+            # Testing adding a message when not logged in
+            resp = c.post("/messages/new",
+                          data={"text": "World"}, follow_redirects=True)
             self.assertEqual(resp.status_code, 200)
 
             html = resp.get_data(as_text=True)
             self.assertIn('Access unauthorized', html)
-
 
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1_id
@@ -91,7 +95,8 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
 
             Message.query.filter_by(text="Hello").one()
 
-            resp = c.post("/messages/new", data={"text": "World"}, follow_redirects=True)
+            resp = c.post("/messages/new",
+                          data={"text": "World"}, follow_redirects=True)
 
             self.assertEqual(resp.status_code, 200)
 
@@ -102,23 +107,24 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
             self.assertIn('id="warbler-hero"', html)
 
 
-
 class MessageDeleteViewTestCase(MessageBaseViewTestCase):
     def test_delete_message(self):
         with self.client as c:
 
-            #Testing deleting a message when not logged in
-            resp = c.post(f"/messages/{self.m1_id}/delete", follow_redirects=True)
+            # Testing deleting a message when not logged in
+            resp = c.post(
+                f"/messages/{self.m1_id}/delete", follow_redirects=True)
             self.assertEqual(resp.status_code, 200)
 
             html = resp.get_data(as_text=True)
             self.assertIn('Access unauthorized.', html)
 
-            #testing deleting while logged in
+            # testing deleting while logged in
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1_id
 
-            resp = c.post(f"/messages/{self.m1_id}/delete", follow_redirects=True)
+            resp = c.post(
+                f"/messages/{self.m1_id}/delete", follow_redirects=True)
             self.assertEqual(resp.status_code, 200)
 
             html = resp.get_data(as_text=True)
@@ -127,9 +133,9 @@ class MessageDeleteViewTestCase(MessageBaseViewTestCase):
             self.assertIn("@u1", html)
             self.assertIn('id="warbler-hero"', html)
 
-
-            #Confirm you cannot delete someone else's message
-            resp = c.post(f"/messages/{self.m2_id}/delete", follow_redirects=True)
+            # Confirm you cannot delete someone else's message
+            resp = c.post(
+                f"/messages/{self.m2_id}/delete", follow_redirects=True)
             self.assertEqual(resp.status_code, 200)
 
             html = resp.get_data(as_text=True)
@@ -140,13 +146,35 @@ class MessageLikeTestCase(MessageBaseViewTestCase):
     def test_like_message(self):
         with self.client as c:
 
-            #testing deleting while logged in
+            # testing liking own message while logged in
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1_id
 
-            print('\n\n\n\n\'', Message.query.get(self.m1_id))
             resp = c.post(f"/users/like/{self.m1_id}", follow_redirects=True)
             self.assertEqual(resp.status_code, 200)
 
             html = resp.get_data(as_text=True)
             self.assertIn('You cannot like your own Warble!', html)
+
+            # testing liking someone else's messsage while logged in
+            resp = c.post(f"/users/like/{self.m2_id}", follow_redirects=True)
+            self.assertEqual(resp.status_code, 200)
+
+            html = resp.get_data(as_text=True)
+            self.assertIn('<i class="bi bi-heart-fill">', html)
+
+
+    def test_unlike_message(self):
+        with self.client as c:
+
+            # testing unliking someone else's messsage while logged in
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
+            c.post(f"/users/like/{self.m2_id}", follow_redirects=True)
+
+            resp = c.post(f"/users/unlike/{self.m2_id}", follow_redirects=True)
+            self.assertEqual(resp.status_code, 200)
+
+            html = resp.get_data(as_text=True)
+            self.assertIn('<i class="bi bi-heart">', html)
