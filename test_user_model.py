@@ -8,6 +8,7 @@
 from app import app
 import os
 from unittest import TestCase
+from sqlalchemy.exc import IntegrityError
 
 from models import db, User, Message, Follow
 
@@ -63,17 +64,21 @@ class UserModelTestCase(TestCase):
         self.assertTrue(u1.is_following(u2))
         self.assertTrue(u2.is_followed_by(u1))
 
-    # def test_user_signup(self):
-    #     test_user = User.signup("u3", "u3@gmail.com", "password", None)
-    #     db.session.commit()
+    def test_user_signup(self):
+        test_user = User.signup("u3", "u3@gmail.com", "password", None)
+        db.session.commit()
 
-    #     self.assertEqual(test_user, User.query.get(test_user.id))
+        self.assertEqual(test_user, User.query.get(test_user.id))
 
-    #     # User.signup("u1", "u3@gmail.com", "password", None)
+        User.signup("u1", "u3@gmail.com", "password", None)
 
-    #     # self.assertRaises(IntegrityError, db.session.commit())
+        with self.assertRaises(IntegrityError):
+            bad_user = User.signup("u3", "u3@gmail.com", "password", None)
+            db.session.commit()
 
-    # def test_user_authenticate(self):
-    #     user = User.authenticate("u1", "password")
 
-    #     self.assertEqual(user, User.query.get(user.id))
+    def test_user_authenticate(self):
+        user = User.authenticate("u1", "password")
+
+        self.assertEqual(user, User.query.get(user.id))
+
