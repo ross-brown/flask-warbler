@@ -253,11 +253,13 @@ def like_message(message_id):
     message = Message.query.get_or_404(message_id)
 
     if message.user_id != g.user.id:
-        g.user.liked_messages.append(message)
+        g.user.liked_messages.add(message)
         db.session.commit()
     else:
         flash('You cannot like your own Warble!', 'danger')
 
+    #Reeferrer may be spoofed or ommitted - could do referrer OR '/'. Or, could
+    #add 'next place to redirect to' in our query string
     return redirect(request.referrer)
 
 

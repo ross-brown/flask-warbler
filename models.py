@@ -98,7 +98,7 @@ class User(db.Model):
     )
 
     liked_messages = db.relationship('Message', secondary='likes',
-                                     backref='users_who_liked')
+                                     backref='users_who_liked', collection_class=set)
 
     def __repr__(self):
         return f"<User #{self.id}: {self.username}, {self.email}>"
@@ -191,13 +191,13 @@ class Like(db.Model):
 
     __tablename__ = 'likes'
 
-    user_who_liked = db.Column(
+    user_id = db.Column(
         db.Integer,
         db.ForeignKey('users.id'),
         primary_key=True
     )
 
-    liked_message = db.Column(
+    message_id = db.Column(
         db.Integer,
         db.ForeignKey('messages.id'),
         primary_key=True
