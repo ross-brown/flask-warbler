@@ -17,7 +17,7 @@ app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 app.config['SQLALCHEMY_ECHO'] = False
-app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = True
+app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 toolbar = DebugToolbarExtension(app)
 
@@ -228,6 +228,36 @@ def stop_following(follow_id):
     db.session.commit()
 
     return redirect(f"/users/{g.user.id}/following")
+
+
+@app.post('/users/like/<int:message_id>')
+def like_message(message_id):
+    """Like a specific message and redirect."""
+
+    if not g.user or not g.csrf_form.validate_on_submit():
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    message = Message.query.get_or_404(message_id)
+    g.user.liked_messages.append(message)
+    db.session.commit()
+
+    return redirect(request.referrer)
+
+
+@app.post("/users/unlike/<int:message_id>")
+def unlike_message(message_id):
+    """Unlike a specific message and redirect."""
+
+    if not g.user or not g.csrf_form.validate_on_submit():
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    message = Message.query.get_or_404(message_id)
+    g.user.liked_messages.remove(message)
+    db.session.commit()
+
+    return redirect(request.referrer)
 
 
 @app.route('/users/profile', methods=["GET", "POST"])
