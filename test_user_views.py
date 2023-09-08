@@ -233,6 +233,38 @@ class UserPagesTestCase(UserViewBaseCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn('Access unauthorized', html)
 
+
+    def test_user_search_list(self):
+        """Test route whenever using search bar."""
+        with self.client as c:
+            # Logging in first
+            c.post('/login',
+                   data={"username": "u1",
+                         "password": "password"},
+                   follow_redirects=True)
+
+            resp = c.get("/users?q=u2", follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('class="card-bio"', html)
+            self.assertIn('@u2', html)
+
+    def test_user_search_list_none(self):
+        """Test route whenever using search bar with no users found."""
+        with self.client as c:
+            # Logging in first
+            c.post('/login',
+                   data={"username": "u1",
+                         "password": "password"},
+                   follow_redirects=True)
+
+            resp = c.get("/users?q=hfjdksahjfk", follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Sorry, no users found', html)
+
     def test_user_profile(self):
         """Test route to view a user's profile."""
         with self.client as c:
