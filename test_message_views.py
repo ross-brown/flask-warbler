@@ -72,17 +72,10 @@ class MessageBaseViewTestCase(TestCase):
 
 class MessageAddViewTestCase(MessageBaseViewTestCase):
     def test_add_message(self):
+        """Test adding a message while logged in."""
         # Since we need to change the session to mimic logging in,
         # we need to use the changing-session trick:
         with self.client as c:
-
-            # Testing adding a message when not logged in
-            resp = c.post("/messages/new",
-                          data={"text": "World"}, follow_redirects=True)
-            self.assertEqual(resp.status_code, 200)
-
-            html = resp.get_data(as_text=True)
-            self.assertIn('Access unauthorized', html)
 
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1_id
@@ -112,18 +105,22 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
             self.assertIn("@u1", html)
             self.assertIn('id="warbler-hero"', html)
 
-
-class MessageDeleteViewTestCase(MessageBaseViewTestCase):
-    def test_delete_message(self):
+    def test_invalid_add_message(self):
+        """Test adding a message while logged out."""
         with self.client as c:
 
-            # Testing deleting a message when not logged in
-            resp = c.post(
-                f"/messages/{self.m1_id}/delete", follow_redirects=True)
+            resp = c.post("/messages/new",
+                          data={"text": "World"}, follow_redirects=True)
             self.assertEqual(resp.status_code, 200)
 
             html = resp.get_data(as_text=True)
-            self.assertIn('Access unauthorized.', html)
+            self.assertIn('Access unauthorized', html)
+
+
+class MessageDeleteViewTestCase(MessageBaseViewTestCase):
+    def test_delete_message(self):
+        """Test deleteing a message while logged in."""
+        with self.client as c:
 
             # testing deleting while logged in
             with c.session_transaction() as sess:
@@ -147,9 +144,22 @@ class MessageDeleteViewTestCase(MessageBaseViewTestCase):
             html = resp.get_data(as_text=True)
             self.assertIn('Access unauthorized', html)
 
+    def test_invalid_delete_message(self):
+        """Test deleting a message while logged out."""
+        with self.client as c:
+
+            resp = c.post(
+                f"/messages/{self.m1_id}/delete", follow_redirects=True)
+            self.assertEqual(resp.status_code, 200)
+
+            html = resp.get_data(as_text=True)
+            self.assertIn('Access unauthorized.', html)
+
+
 
 class MessageLikeTestCase(MessageBaseViewTestCase):
     def test_like_message(self):
+        """Test liking a message while logged in."""
         with self.client as c:
 
             # testing liking own message while logged in
@@ -169,8 +179,21 @@ class MessageLikeTestCase(MessageBaseViewTestCase):
             html = resp.get_data(as_text=True)
             self.assertIn('<i class="bi bi-heart-fill">', html)
 
+    def test_invalid_like_message(self):
+        """Test liking a message while logged out."""
+        with self.client as c:
+
+            resp = c.post(
+                f"/users/like/{self.m1_id}", follow_redirects=True)
+            self.assertEqual(resp.status_code, 200)
+
+            html = resp.get_data(as_text=True)
+            self.assertIn('Access unauthorized.', html)
+
+
 
     def test_unlike_message(self):
+        """Test unliking a message while logged in."""
         with self.client as c:
 
             # testing unliking someone else's messsage while logged in
@@ -184,3 +207,14 @@ class MessageLikeTestCase(MessageBaseViewTestCase):
 
             html = resp.get_data(as_text=True)
             self.assertIn('<i class="bi bi-heart">', html)
+
+    def test_invalid_unlike_message(self):
+        """Test unliking a message while logged out."""
+        with self.client as c:
+
+            resp = c.post(
+                f"/users/unlike/{self.m1_id}", follow_redirects=True)
+            self.assertEqual(resp.status_code, 200)
+
+            html = resp.get_data(as_text=True)
+            self.assertIn('Access unauthorized.', html)
