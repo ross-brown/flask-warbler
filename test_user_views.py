@@ -67,22 +67,21 @@ class UserAuthenticationTestCase(UserViewBaseCase):
     def test_signup(self):
         """Testing successful signup route for new user."""
         with self.client as c:
-            #Testing Get for Signup Route
+            # Testing Get for Signup Route
             resp = c.get('/signup')
             html = resp.get_data(as_text=True)
 
             self.assertEqual(resp.status_code, 200)
             self.assertIn('Join Warbler today', html)
 
-
             test_data = {
-                            'username': "signed_up_user",
+                'username': "signed_up_user",
                             'password': 'password',
                             'email': 'signup@gmail.com',
                             'image_url': None
-                          }
+            }
 
-            #Testing Post Route
+            # Testing Post Route
             resp = c.post('/signup',
                           data=test_data,
                           follow_redirects=True)
@@ -93,21 +92,83 @@ class UserAuthenticationTestCase(UserViewBaseCase):
             self.assertIn('id="home-aside"', html)
             self.assertIn('@signed_up_user', html)
 
-
     def test_invalid_signup(self):
         """Testing unsuccesful route when trying to create an invalid user"""
 
         with self.client as c:
             resp = c.post('/signup',
-                        data={
-                        'username': "u1",
-                        'password': 'password',
-                        'email': 'u1@email.com',
-                        'image_url': None
-                        },
-                        follow_redirects=True)
+                          data={
+                              'username': "u1",
+                              'password': 'password',
+                              'email': 'u1@email.com',
+                              'image_url': None
+                          },
+                          follow_redirects=True)
 
             html = resp.get_data(as_text=True)
             self.assertEqual(resp.status_code, 200)
             self.assertIn('Username already taken', html)
 
+    def test_login(self):
+        """Testing successful login routes."""
+
+        with self.client as c:
+            # Testing Get for Login Route
+            resp = c.get('/login')
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Welcome back.', html)
+
+            # Testing Post Route
+            resp = c.post('/login',
+                          data={"username": "u1",
+                                "password": "password"},
+                          follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Hello, u1!', html)
+            self.assertIn('id="home-aside"', html)
+
+    def test_invalid_login(self):
+        """Testing unsuccesful route when trying to login."""
+
+        with self.client as c:
+            resp = c.post('/login',
+                          data={
+                              'username': "u321",
+                              'password': 'password'
+                          },
+                          follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Invalid credentials.', html)
+
+    def test_logout(self):
+        """Testing successful route when logging out."""
+        with self.client as c:
+            # Need to login first to be able to logout
+            c.post('/login',
+                          data={"username": "u1",
+                                "password": "password"},
+                          follow_redirects=True)
+
+            resp = c.post('/logout', follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Logged out successfully', html)
+
+
+    def test_invalid_logout(self):
+        """Testing unsuccesful route when trying to logout."""
+        with self.client as c:
+
+            resp = c.post('/logout', follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Access unauthorized', html)
