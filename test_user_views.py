@@ -69,18 +69,18 @@ class UserViewBaseCase(TestCase):
 class UserAuthenticationTestCase(UserViewBaseCase):
     """Tests for signup, login, logout."""
 
-    def test_signup(self):
-        """Testing successful signup route for new user."""
+    def test_show_signup(self):
+        """Test for loading sign up page."""
         with self.client as c:
-            #TODO: have one just for getting sign up page
-            # Testing Get for Signup Route
             resp = c.get('/signup')
             html = resp.get_data(as_text=True)
 
             self.assertEqual(resp.status_code, 200)
             self.assertIn('Join Warbler today', html)
 
-            # Testing Post Route
+    def test_signup(self):
+        """Testing successful signup route for new user."""
+        with self.client as c:
             resp = c.post('/signup',
                           data={
                             'username': "signed_up_user",
@@ -113,19 +113,19 @@ class UserAuthenticationTestCase(UserViewBaseCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn('Username already taken', html)
 
-    def test_login(self):
-        """Testing successful login routes."""
-
+    def test_show_login(self):
+        """Test for loading login page."""
         with self.client as c:
-            # Testing Get for Login Route
-            #TODO: split get into separate test
             resp = c.get('/login')
             html = resp.get_data(as_text=True)
 
             self.assertEqual(resp.status_code, 200)
             self.assertIn('Welcome back.', html)
 
-            # Testing Post Route
+    def test_login(self):
+        """Testing successful login routes."""
+
+        with self.client as c:
             resp = c.post('/login',
                           data={"username": "u1",
                                 "password": "password"},
