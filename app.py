@@ -424,6 +424,14 @@ def homepage():
     return render_template('home-anon.html', form=g.csrf_form)
 
 
+
+@app.errorhandler(404)
+def page_not_found(error):
+    """Display custom error page on 404 status codes."""
+
+    return render_template("404.html", form=g.csrf_form), 404
+
+
 @app.after_request
 def add_header(response):
     """Add non-caching headers on every request."""
