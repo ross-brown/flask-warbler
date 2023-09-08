@@ -21,7 +21,7 @@
 			</div>
 			{% if user.id != g.user.id %}
 				{% if message in g.user.liked_messages %}
-				<form action="/users/unlike/{{ message.id }}" method="POST" class="messages-like">
+				<form action="/users/unlike/{{ message.id }}?next=/users/{{ user.id }}" method="POST" class="messages-like">
 					{{ form.hidden_tag() }}
 					<button type="submit" class="like-button">
 						<i class="bi bi-heart-fill"></i>
@@ -29,7 +29,7 @@
 					{{ message.users_who_liked | length }}
 				</form>
 				{% else %}
-				<form action="/users/like/{{ message.id }}" method="POST" class="messages-like">
+				<form action="/users/like/{{ message.id }}?next=/users/{{ user.id }}" method="POST" class="messages-like">
 					{{ form.hidden_tag() }}
 					<button class="like-button">
 						<i class="bi bi-heart"></i>
@@ -38,7 +38,7 @@
 				</form>
 				{% endif %}
 			{% else %}
-			<form action="/users/like/{{ message.id }}" method="POST" class="messages-like">
+			<form action="/users/like/{{ message.id }}?next=/users/{{ user.id }}" method="POST" class="messages-like">
 				{{ form.hidden_tag() }}
 				<button class="like-button  disabled-like">
 					<i class="bi bi-heart"></i>

@@ -72,6 +72,7 @@ class UserAuthenticationTestCase(UserViewBaseCase):
     def test_signup(self):
         """Testing successful signup route for new user."""
         with self.client as c:
+            #TODO: have one just for getting sign up page
             # Testing Get for Signup Route
             resp = c.get('/signup')
             html = resp.get_data(as_text=True)
@@ -79,16 +80,14 @@ class UserAuthenticationTestCase(UserViewBaseCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn('Join Warbler today', html)
 
-            test_data = {
-                'username': "signed_up_user",
+            # Testing Post Route
+            resp = c.post('/signup',
+                          data={
+                            'username': "signed_up_user",
                             'password': 'password',
                             'email': 'signup@gmail.com',
                             'image_url': None
-            }
-
-            # Testing Post Route
-            resp = c.post('/signup',
-                          data=test_data,
+            },
                           follow_redirects=True)
 
             html = resp.get_data(as_text=True)
@@ -98,7 +97,7 @@ class UserAuthenticationTestCase(UserViewBaseCase):
             self.assertIn('@signed_up_user', html)
 
     def test_invalid_signup(self):
-        """Testing unsuccesful route when trying to create an invalid user"""
+        """Testing unsuccessful route when trying to create an invalid user"""
 
         with self.client as c:
             resp = c.post('/signup',
@@ -119,6 +118,7 @@ class UserAuthenticationTestCase(UserViewBaseCase):
 
         with self.client as c:
             # Testing Get for Login Route
+            #TODO: split get into separate test
             resp = c.get('/login')
             html = resp.get_data(as_text=True)
 
@@ -166,7 +166,7 @@ class UserAuthenticationTestCase(UserViewBaseCase):
             self.assertIn('Logged out successfully', html)
 
     def test_invalid_logout(self):
-        """Testing unsuccesful route when trying to logout."""
+        """Testing unsuccessful route when trying to logout."""
         with self.client as c:
 
             resp = c.post('/logout', follow_redirects=True)
@@ -405,7 +405,7 @@ class UserFunctionalityTestCase(UserViewBaseCase):
         """Test route to unfollow someone without being logged in."""
         with self.client as c:
 
-            resp = c.post(f"/users/follow/{self.u3_id}", follow_redirects=True)
+            resp = c.post(f"/users/stop-following/{self.u3_id}", follow_redirects=True)
 
             html = resp.get_data(as_text=True)
             self.assertEqual(resp.status_code, 200)
@@ -420,13 +420,14 @@ class UserFunctionalityTestCase(UserViewBaseCase):
 
             resp = c.get(f"/users/profile")
 
+            #TODO: could check that initial profile data is there.
             html = resp.get_data(as_text=True)
             self.assertEqual(resp.status_code, 200)
             self.assertIn('Edit Your Profile.', html)
             self.assertIn('Edit this user!', html)
 
     def test_invalid_user_edit_page(self):
-        """Test route to unfollow someone without being logged in."""
+        """Test route to edit profile without being logged in."""
         with self.client as c:
 
             resp = c.post(f"/users/profile", follow_redirects=True)

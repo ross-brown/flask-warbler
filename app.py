@@ -260,7 +260,7 @@ def like_message(message_id):
 
     #Reeferrer may be spoofed or ommitted - could do referrer OR '/'. Or, could
     #add 'next place to redirect to' in our query string
-    return redirect("/")
+    return redirect(request.args['next'])
 
 
 @app.post("/users/unlike/<int:message_id>")
@@ -276,7 +276,7 @@ def unlike_message(message_id):
     g.user.liked_messages.remove(message)
     db.session.commit()
     #TODO: FIGURE OUT WHERE TO REDIRECT!!
-    return redirect("/")
+    return redirect(request.args['next'])
 
 
 @app.route('/users/profile', methods=["GET", "POST"])

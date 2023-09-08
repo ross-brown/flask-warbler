@@ -81,6 +81,7 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
                 sess[CURR_USER_KEY] = self.u1_id
 
             # Testing a GET request to view the add message page
+            #TODO: split GET into sep request
             resp = c.get("/messages/new", follow_redirects=True)
             html = resp.get_data(as_text=True)
             self.assertIn("happening?", html)
@@ -137,6 +138,7 @@ class MessageDeleteViewTestCase(MessageBaseViewTestCase):
             self.assertIn('id="warbler-hero"', html)
 
             # Confirm you cannot delete someone else's message
+            #TODO: split into separate test as well
             resp = c.post(
                 f"/messages/{self.m2_id}/delete", follow_redirects=True)
             self.assertEqual(resp.status_code, 200)
@@ -166,14 +168,15 @@ class MessageLikeTestCase(MessageBaseViewTestCase):
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1_id
 
-            resp = c.post(f"/users/like/{self.m1_id}", follow_redirects=True)
+            #Ensuring a user can't like their own warble.
+            resp = c.post(f"/users/like/{self.m1_id}?next=/", follow_redirects=True)
             self.assertEqual(resp.status_code, 200)
 
             html = resp.get_data(as_text=True)
             self.assertIn('You cannot like your own Warble!', html)
 
             # testing liking someone else's messsage while logged in
-            resp = c.post(f"/users/like/{self.m2_id}", follow_redirects=True)
+            resp = c.post(f"/users/like/{self.m2_id}?next=/", follow_redirects=True)
             self.assertEqual(resp.status_code, 200)
 
             html = resp.get_data(as_text=True)
@@ -184,7 +187,7 @@ class MessageLikeTestCase(MessageBaseViewTestCase):
         with self.client as c:
 
             resp = c.post(
-                f"/users/like/{self.m1_id}", follow_redirects=True)
+                f"/users/like/{self.m1_id}?next=/", follow_redirects=True)
             self.assertEqual(resp.status_code, 200)
 
             html = resp.get_data(as_text=True)
@@ -200,9 +203,9 @@ class MessageLikeTestCase(MessageBaseViewTestCase):
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1_id
 
-            c.post(f"/users/like/{self.m2_id}", follow_redirects=True)
+            c.post(f"/users/like/{self.m2_id}?next=/", follow_redirects=True)
 
-            resp = c.post(f"/users/unlike/{self.m2_id}", follow_redirects=True)
+            resp = c.post(f"/users/unlike/{self.m2_id}?next=/", follow_redirects=True)
             self.assertEqual(resp.status_code, 200)
 
             html = resp.get_data(as_text=True)
@@ -213,7 +216,7 @@ class MessageLikeTestCase(MessageBaseViewTestCase):
         with self.client as c:
 
             resp = c.post(
-                f"/users/unlike/{self.m1_id}", follow_redirects=True)
+                f"/users/unlike/{self.m1_id}?next=/", follow_redirects=True)
             self.assertEqual(resp.status_code, 200)
 
             html = resp.get_data(as_text=True)

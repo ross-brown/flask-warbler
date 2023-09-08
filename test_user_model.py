@@ -47,6 +47,7 @@ class UserModelTestCase(TestCase):
         db.session.rollback()
 
     def test_user_model(self):
+        """Test that user is added to db correctly."""
         u1 = User.query.get(self.u1_id)
 
         # User should have no messages & no followers
@@ -54,6 +55,7 @@ class UserModelTestCase(TestCase):
         self.assertEqual(len(u1.followers), 0)
 
     def test_user_follow(self):
+        """Test is_following and is_followed_by methods working correctly."""
         u1 = User.query.get(self.u1_id)
         u2 = User.query.get(self.u2_id)
 
@@ -65,25 +67,32 @@ class UserModelTestCase(TestCase):
         self.assertTrue(u2.is_followed_by(u1))
 
     def test_user_signup(self):
+        """Testing .signup method working correctly."""
+
         test_user = User.signup("u3", "u3@gmail.com", "password", None)
         db.session.commit()
 
         self.assertEqual(test_user, User.query.get(test_user.id))
+        #TODO: add tests to confirm that password is being hashed when added to
+        #the database - can confirm it is hashed by checking that password from  db
+        #begins with $ value that is at beginning
 
-        User.signup("u1", "u3@gmail.com", "password", None)
-
+        #TODO: break out into separate test
+        #Testing to see that the correct error is raised when signing up with
+        #invalid credentials
         with self.assertRaises(IntegrityError):
             User.signup("u3", "u3@gmail.com", "password", None)
             db.session.commit()
 
 
     def test_user_authenticate(self):
-        """Test that authenticate method works as expected."""
+        """Test that .authenticate method works as expected."""
 
         # Authenticate returns user when correct credentials input.
         user = User.authenticate("u1", "password")
         self.assertEqual(user, User.query.get(user.id))
 
+        #TODO: split up happy and sad parts.
         #Returns False when incorrect username or password
         self.assertFalse(User.authenticate('tuckerdiane', 'ewrghetheat'))
         self.assertFalse(User.authenticate('rwthejnmhraet', 'password'))

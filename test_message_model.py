@@ -1,4 +1,4 @@
-"""User model tests."""
+"""Message model tests."""
 
 # run these tests like:
 #
