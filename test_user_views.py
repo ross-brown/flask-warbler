@@ -1,4 +1,4 @@
-"""Message View tests."""
+"""User View tests."""
 
 # run these tests like:
 #
@@ -7,9 +7,8 @@
 
 import os
 from unittest import TestCase
-from sqlalchemy.exc import IntegrityError
 
-from models import db, Message, User, Like
+from models import db, Message, User
 
 # BEFORE we import our app, let's set an environmental variable
 # to use a different database for tests (we need to do this
@@ -157,10 +156,8 @@ class UserAuthenticationTestCase(UserViewBaseCase):
         """Testing successful route when logging out."""
         with self.client as c:
             # Need to login first to be able to logout
-            c.post('/login',
-                   data={"username": "u1",
-                         "password": "password"},
-                   follow_redirects=True)
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
 
             resp = c.post('/logout', follow_redirects=True)
 
@@ -186,10 +183,8 @@ class UserPagesTestCase(UserViewBaseCase):
         """Test route to view the homepage."""
         with self.client as c:
             # Logging in first
-            c.post('/login',
-                   data={"username": "u1",
-                         "password": "password"},
-                   follow_redirects=True)
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
 
             resp = c.get("/")
 
@@ -212,10 +207,8 @@ class UserPagesTestCase(UserViewBaseCase):
         """Test route to get list of users."""
         with self.client as c:
             # Logging in first
-            c.post('/login',
-                   data={"username": "u1",
-                         "password": "password"},
-                   follow_redirects=True)
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
 
             resp = c.get("/users", follow_redirects=True)
 
@@ -233,15 +226,12 @@ class UserPagesTestCase(UserViewBaseCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn('Access unauthorized', html)
 
-
     def test_user_search_list(self):
         """Test route whenever using search bar."""
         with self.client as c:
             # Logging in first
-            c.post('/login',
-                   data={"username": "u1",
-                         "password": "password"},
-                   follow_redirects=True)
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
 
             resp = c.get("/users?q=u2", follow_redirects=True)
 
@@ -254,10 +244,8 @@ class UserPagesTestCase(UserViewBaseCase):
         """Test route whenever using search bar with no users found."""
         with self.client as c:
             # Logging in first
-            c.post('/login',
-                   data={"username": "u1",
-                         "password": "password"},
-                   follow_redirects=True)
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
 
             resp = c.get("/users?q=hfjdksahjfk", follow_redirects=True)
 
@@ -269,10 +257,8 @@ class UserPagesTestCase(UserViewBaseCase):
         """Test route to view a user's profile."""
         with self.client as c:
             # Logging in first
-            c.post('/login',
-                   data={"username": "u1",
-                         "password": "password"},
-                   follow_redirects=True)
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
 
             resp = c.get(f"/users/{self.u1_id}", follow_redirects=True)
 
@@ -295,10 +281,8 @@ class UserPagesTestCase(UserViewBaseCase):
         """Test route to view a user's following list."""
         with self.client as c:
             # Logging in first
-            c.post('/login',
-                   data={"username": "u1",
-                         "password": "password"},
-                   follow_redirects=True)
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
 
             resp = c.get(f"/users/{self.u1_id}/following",
                          follow_redirects=True)
@@ -323,10 +307,8 @@ class UserPagesTestCase(UserViewBaseCase):
         """Test route to view a user's followers list."""
         with self.client as c:
             # Logging in first
-            c.post('/login',
-                   data={"username": "u1",
-                         "password": "password"},
-                   follow_redirects=True)
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
 
             resp = c.get(f"/users/{self.u1_id}/followers",
                          follow_redirects=True)
@@ -351,10 +333,8 @@ class UserPagesTestCase(UserViewBaseCase):
         """Test route to view a user's likes."""
         with self.client as c:
             # Logging in first
-            c.post('/login',
-                   data={"username": "u1",
-                         "password": "password"},
-                   follow_redirects=True)
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
 
             # Creating a liked message to check for
             m1 = Message(text="test-message", user_id=self.u2_id)
@@ -387,10 +367,8 @@ class UserFunctionalityTestCase(UserViewBaseCase):
         """Test route to follow a user."""
         with self.client as c:
             # Logging in first
-            c.post('/login',
-                   data={"username": "u1",
-                         "password": "password"},
-                   follow_redirects=True)
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
 
             resp = c.post(f"/users/follow/{self.u3_id}", follow_redirects=True)
 
@@ -413,10 +391,8 @@ class UserFunctionalityTestCase(UserViewBaseCase):
         """Test route to unfollow a user."""
         with self.client as c:
             # Logging in first
-            c.post('/login',
-                   data={"username": "u1",
-                         "password": "password"},
-                   follow_redirects=True)
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
 
             resp = c.post(
                 f"/users/stop-following/{self.u2_id}", follow_redirects=True)
@@ -439,10 +415,8 @@ class UserFunctionalityTestCase(UserViewBaseCase):
         """Test route to view edit page."""
         with self.client as c:
             # Logging in first
-            c.post('/login',
-                   data={"username": "u1",
-                         "password": "password"},
-                   follow_redirects=True)
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
 
             resp = c.get(f"/users/profile")
 
@@ -465,10 +439,8 @@ class UserFunctionalityTestCase(UserViewBaseCase):
         """Test route to edit a user."""
         with self.client as c:
             # Logging in first
-            c.post('/login',
-                   data={"username": "u1",
-                         "password": "password"},
-                   follow_redirects=True)
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
 
             resp = c.post(f"/users/profile", data={"username": "new-name",
                                                    "email": "new@gmail.com",
@@ -498,10 +470,8 @@ class UserFunctionalityTestCase(UserViewBaseCase):
         """Test route to edit a user with incorrect password."""
         with self.client as c:
             # Logging in first
-            c.post('/login',
-                   data={"username": "u1",
-                         "password": "password"},
-                   follow_redirects=True)
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
 
             resp = c.post(f"/users/profile", data={"username": "new-name",
                                                    "email": "new@gmail.com",
@@ -516,15 +486,12 @@ class UserFunctionalityTestCase(UserViewBaseCase):
             self.assertIn('new-name', html)
             self.assertIn('Password incorrect', html)
 
-
     def test_user_delete(self):
         """Test route to delete a user."""
         with self.client as c:
             # Logging in first
-            c.post('/login',
-                   data={"username": "u1",
-                         "password": "password"},
-                   follow_redirects=True)
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
 
             resp = c.post(f"/users/delete", follow_redirects=True)
 

@@ -87,6 +87,12 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1_id
 
+            # Testing a GET request to view the add message page
+            resp = c.get("/messages/new", follow_redirects=True)
+            html = resp.get_data(as_text=True)
+            self.assertIn("happening?", html)
+            self.assertIn("Add my message!", html)
+
             # Now, that session setting is saved, so we can have
             # the rest of ours test
             resp = c.post("/messages/new", data={"text": "Hello"})

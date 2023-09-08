@@ -71,7 +71,7 @@ class MessageModelTestCase(TestCase):
         self.assertNotEqual(m2.user_id, u1.id)
 
 
-    def test_(self):
+    def test_user_likes_relationship(self):
         """Test relationship between messages/users and likes."""
 
         m1 = Message.query.get(self.m1_id)
