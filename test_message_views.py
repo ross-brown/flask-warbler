@@ -91,7 +91,6 @@ class MessagePageTestCase(MessageBaseViewTestCase):
 
         with self.client as c:
 
-
             resp = c.get(f'/messages/{self.m1_id}', follow_redirects=True)
             html = resp.get_data(as_text=True)
 
@@ -100,6 +99,30 @@ class MessagePageTestCase(MessageBaseViewTestCase):
 
 
 class MessageAddViewTestCase(MessageBaseViewTestCase):
+    def test_show_add_message(self):
+        """Test showing the add message page while logged in."""
+        with self.client as c:
+
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
+            resp = c.get("/messages/new", follow_redirects=True)
+            html = resp.get_data(as_text=True)
+            self.assertIn("happening?", html)
+            self.assertIn("Add my message!", html)
+
+    def test_invalid_show_add_message(self):
+        """Test for redirecting when trying to see message page while logged out."""
+
+        with self.client as c:
+
+            resp = c.get(f'/messages/new', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Access unauthorized', html)
+
+
     def test_add_message(self):
         """Test adding a message while logged in."""
         # Since we need to change the session to mimic logging in,
@@ -109,15 +132,6 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1_id
 
-            # Testing a GET request to view the add message page
-            #TODO: split GET into sep request
-            resp = c.get("/messages/new", follow_redirects=True)
-            html = resp.get_data(as_text=True)
-            self.assertIn("happening?", html)
-            self.assertIn("Add my message!", html)
-
-            # Now, that session setting is saved, so we can have
-            # the rest of ours test
             resp = c.post("/messages/new", data={"text": "Hello"})
 
             self.assertEqual(resp.status_code, 302)
@@ -166,14 +180,22 @@ class MessageDeleteViewTestCase(MessageBaseViewTestCase):
             self.assertIn("@u1", html)
             self.assertIn('id="warbler-hero"', html)
 
-            # Confirm you cannot delete someone else's message
-            #TODO: split into separate test as well
+
+    def test_invalid_delete_others_message(self):
+        """Test that you cannot delete another user's message."""
+        with self.client as c:
+
+            # testing deleting while logged in
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
             resp = c.post(
                 f"/messages/{self.m2_id}/delete", follow_redirects=True)
             self.assertEqual(resp.status_code, 200)
 
             html = resp.get_data(as_text=True)
             self.assertIn('Access unauthorized', html)
+
 
     def test_invalid_delete_message(self):
         """Test deleting a message while logged out."""
@@ -193,23 +215,29 @@ class MessageLikeTestCase(MessageBaseViewTestCase):
         """Test liking a message while logged in."""
         with self.client as c:
 
-            # testing liking own message while logged in
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1_id
 
-            #Ensuring a user can't like their own warble.
+            resp = c.post(f"/users/like/{self.m2_id}?next=/", follow_redirects=True)
+            self.assertEqual(resp.status_code, 200)
+
+            html = resp.get_data(as_text=True)
+            self.assertIn('<i class="bi bi-heart-fill">', html)
+
+
+    def test_invalid_like_own_message(self):
+        """Test to ensure you cannot like your own message."""
+        with self.client as c:
+
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
             resp = c.post(f"/users/like/{self.m1_id}?next=/", follow_redirects=True)
             self.assertEqual(resp.status_code, 200)
 
             html = resp.get_data(as_text=True)
             self.assertIn('You cannot like your own Warble!', html)
 
-            # testing liking someone else's messsage while logged in
-            resp = c.post(f"/users/like/{self.m2_id}?next=/", follow_redirects=True)
-            self.assertEqual(resp.status_code, 200)
-
-            html = resp.get_data(as_text=True)
-            self.assertIn('<i class="bi bi-heart-fill">', html)
 
     def test_invalid_like_message(self):
         """Test liking a message while logged out."""
@@ -221,7 +249,6 @@ class MessageLikeTestCase(MessageBaseViewTestCase):
 
             html = resp.get_data(as_text=True)
             self.assertIn('Access unauthorized.', html)
-
 
 
     def test_unlike_message(self):
