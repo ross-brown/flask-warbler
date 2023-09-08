@@ -44,16 +44,22 @@ class UserViewBaseCase(TestCase):
     """Base case for user views"""
 
     def setUp(self):
+        Message.query.delete()
         User.query.delete()
 
         u1 = User.signup("u1", "u1@email.com", "password", None)
         u2 = User.signup("u2", "u2@email.com", "password", None)
+        u3 = User.signup("u3", "u3@email.com", "password", None)
         db.session.flush()
+
+        u1.following.append(u2)
+        u2.following.append(u1)
 
         db.session.commit()
 
         self.u1_id = u1.id
         self.u2_id = u2.id
+        self.u3_id = u3.id
 
         self.client = app.test_client()
 
@@ -152,9 +158,9 @@ class UserAuthenticationTestCase(UserViewBaseCase):
         with self.client as c:
             # Need to login first to be able to logout
             c.post('/login',
-                          data={"username": "u1",
-                                "password": "password"},
-                          follow_redirects=True)
+                   data={"username": "u1",
+                         "password": "password"},
+                   follow_redirects=True)
 
             resp = c.post('/logout', follow_redirects=True)
 
@@ -162,12 +168,344 @@ class UserAuthenticationTestCase(UserViewBaseCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn('Logged out successfully', html)
 
-
     def test_invalid_logout(self):
         """Testing unsuccesful route when trying to logout."""
         with self.client as c:
 
             resp = c.post('/logout', follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Access unauthorized', html)
+
+
+class UserPagesTestCase(UserViewBaseCase):
+    """Testing for viewing different pages for a user."""
+
+    def test_homepage(self):
+        """Test route to view the homepage."""
+        with self.client as c:
+            # Logging in first
+            c.post('/login',
+                   data={"username": "u1",
+                         "password": "password"},
+                   follow_redirects=True)
+
+            resp = c.get("/")
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('@u1', html)
+            self.assertIn('id="home-aside"', html)
+
+    def test_invalid_homepage(self):
+        """Test route to homepage without being logged in."""
+        with self.client as c:
+
+            resp = c.get("/")
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('New to Warbler?', html)
+
+    def test_user_list(self):
+        """Test route to get list of users."""
+        with self.client as c:
+            # Logging in first
+            c.post('/login',
+                   data={"username": "u1",
+                         "password": "password"},
+                   follow_redirects=True)
+
+            resp = c.get("/users", follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('class="card-bio"', html)
+
+    def test_invalid_user_list(self):
+        """Test route to get list of users without being logged in."""
+        with self.client as c:
+
+            resp = c.get("/users", follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Access unauthorized', html)
+
+    def test_user_profile(self):
+        """Test route to view a user's profile."""
+        with self.client as c:
+            # Logging in first
+            c.post('/login',
+                   data={"username": "u1",
+                         "password": "password"},
+                   follow_redirects=True)
+
+            resp = c.get(f"/users/{self.u1_id}", follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('@u1', html)
+            self.assertIn('id="warbler-hero"', html)
+
+    def test_invalid_user_profile(self):
+        """Test route to get list of users without being logged in."""
+        with self.client as c:
+
+            resp = c.get(f"/users/{self.u1_id}", follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Access unauthorized', html)
+
+    def test_user_following(self):
+        """Test route to view a user's following list."""
+        with self.client as c:
+            # Logging in first
+            c.post('/login',
+                   data={"username": "u1",
+                         "password": "password"},
+                   follow_redirects=True)
+
+            resp = c.get(f"/users/{self.u1_id}/following",
+                         follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('@u1', html)
+            self.assertIn('@u2', html)
+
+    def test_invalid_user_following(self):
+        """Test route to get list of following without being logged in."""
+        with self.client as c:
+
+            resp = c.get(f"/users/{self.u1_id}/following",
+                         follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Access unauthorized', html)
+
+    def test_user_followers(self):
+        """Test route to view a user's followers list."""
+        with self.client as c:
+            # Logging in first
+            c.post('/login',
+                   data={"username": "u1",
+                         "password": "password"},
+                   follow_redirects=True)
+
+            resp = c.get(f"/users/{self.u1_id}/followers",
+                         follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('@u1', html)
+            self.assertIn('@u2', html)
+
+    def test_invalid_user_followers(self):
+        """Test route to get list of followers without being logged in."""
+        with self.client as c:
+
+            resp = c.get(f"/users/{self.u1_id}/followers",
+                         follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Access unauthorized', html)
+
+    def test_user_likes(self):
+        """Test route to view a user's likes."""
+        with self.client as c:
+            # Logging in first
+            c.post('/login',
+                   data={"username": "u1",
+                         "password": "password"},
+                   follow_redirects=True)
+
+            # Creating a liked message to check for
+            m1 = Message(text="test-message", user_id=self.u2_id)
+            db.session.commit()
+            u1 = User.query.get(self.u1_id)
+            u1.liked_messages.add(m1)
+
+            resp = c.get(f"/users/{self.u1_id}/likes")
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('test-message', html)
+            self.assertIn('@u2', html)
+
+    def test_invalid_user_likes(self):
+        """Test route to get list of liked messages without being logged in."""
+        with self.client as c:
+
+            resp = c.get(f"/users/{self.u1_id}/likes", follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Access unauthorized', html)
+
+
+class UserFunctionalityTestCase(UserViewBaseCase):
+    """Testing functionality that a user can do."""
+
+    def test_user_follow(self):
+        """Test route to follow a user."""
+        with self.client as c:
+            # Logging in first
+            c.post('/login',
+                   data={"username": "u1",
+                         "password": "password"},
+                   follow_redirects=True)
+
+            resp = c.post(f"/users/follow/{self.u3_id}", follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('@u3', html)
+            self.assertIn('@u2', html)
+
+    def test_invalid_user_follow(self):
+        """Test route to follow someone without being logged in."""
+        with self.client as c:
+
+            resp = c.post(f"/users/follow/{self.u3_id}", follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Access unauthorized', html)
+
+    def test_user_unfollow(self):
+        """Test route to unfollow a user."""
+        with self.client as c:
+            # Logging in first
+            c.post('/login',
+                   data={"username": "u1",
+                         "password": "password"},
+                   follow_redirects=True)
+
+            resp = c.post(
+                f"/users/stop-following/{self.u2_id}", follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertNotIn('@u2', html)
+
+    def test_invalid_user_unfollow(self):
+        """Test route to unfollow someone without being logged in."""
+        with self.client as c:
+
+            resp = c.post(f"/users/follow/{self.u3_id}", follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Access unauthorized', html)
+
+    def test_user_edit_page(self):
+        """Test route to view edit page."""
+        with self.client as c:
+            # Logging in first
+            c.post('/login',
+                   data={"username": "u1",
+                         "password": "password"},
+                   follow_redirects=True)
+
+            resp = c.get(f"/users/profile")
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Edit Your Profile.', html)
+            self.assertIn('Edit this user!', html)
+
+    def test_invalid_user_edit_page(self):
+        """Test route to unfollow someone without being logged in."""
+        with self.client as c:
+
+            resp = c.post(f"/users/profile", follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Access unauthorized', html)
+
+    def test_user_edit(self):
+        """Test route to edit a user."""
+        with self.client as c:
+            # Logging in first
+            c.post('/login',
+                   data={"username": "u1",
+                         "password": "password"},
+                   follow_redirects=True)
+
+            resp = c.post(f"/users/profile", data={"username": "new-name",
+                                                   "email": "new@gmail.com",
+                                                   "image_url": None,
+                                                   "header_image_url": None,
+                                                   "bio": None,
+                                                   "password": "password"
+                                                   },
+                          follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('new-name', html)
+            self.assertIn('id="warbler-hero"', html)
+
+    def test_invalid_user_edit(self):
+        """Test route to edit profile without being logged in."""
+        with self.client as c:
+
+            resp = c.post(f"/users/profile", follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Access unauthorized', html)
+
+    def test_user_edit_invalid_password(self):
+        """Test route to edit a user with incorrect password."""
+        with self.client as c:
+            # Logging in first
+            c.post('/login',
+                   data={"username": "u1",
+                         "password": "password"},
+                   follow_redirects=True)
+
+            resp = c.post(f"/users/profile", data={"username": "new-name",
+                                                   "email": "new@gmail.com",
+                                                   "image_url": None,
+                                                   "header_image_url": None,
+                                                   "bio": None,
+                                                   "password": "fdsafgfdsgf"
+                                                   })
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('new-name', html)
+            self.assertIn('Password incorrect', html)
+
+
+    def test_user_delete(self):
+        """Test route to delete a user."""
+        with self.client as c:
+            # Logging in first
+            c.post('/login',
+                   data={"username": "u1",
+                         "password": "password"},
+                   follow_redirects=True)
+
+            resp = c.post(f"/users/delete", follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Account deleted successfully', html)
+            self.assertIn('Join Warbler today.', html)
+
+    def test_invalid_user_delete(self):
+        """Test route to delete user without being logged in."""
+        with self.client as c:
+
+            resp = c.post(f"/users/delete", follow_redirects=True)
 
             html = resp.get_data(as_text=True)
             self.assertEqual(resp.status_code, 200)
