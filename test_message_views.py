@@ -70,6 +70,35 @@ class MessageBaseViewTestCase(TestCase):
         db.session.rollback()
 
 
+class MessagePageTestCase(MessageBaseViewTestCase):
+    def test_show_message(self):
+        """Test that the message page loads"""
+
+        with self.client as c:
+
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
+            resp = c.get(f'/messages/{self.m1_id}')
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn(self.m1_text, html)
+            self.assertIn('class="message-area"', html)
+
+    def test_invalid_show_message(self):
+        """Test to ensure you cannot see a message when logged out."""
+
+        with self.client as c:
+
+
+            resp = c.get(f'/messages/{self.m1_id}', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Access unauthorized', html)
+
+
 class MessageAddViewTestCase(MessageBaseViewTestCase):
     def test_add_message(self):
         """Test adding a message while logged in."""

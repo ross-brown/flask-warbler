@@ -387,6 +387,21 @@ class UserFunctionalityTestCase(UserViewBaseCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn('Access unauthorized', html)
 
+    def test_invalid_follow_self(self):
+        """Testing to confirm that you cannot follow yourself."""
+
+        with self.client as c:
+            # Logging in first
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
+            resp = c.post(
+                f"/users/follow/{self.u1_id}", follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertNotIn("You can't follow yourself", html)
+
     def test_user_unfollow(self):
         """Test route to unfollow a user."""
         with self.client as c:
