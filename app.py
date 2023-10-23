@@ -96,7 +96,7 @@ def signup():
     else:
         return render_template('users/signup.html', form=form)
 
-
+#TODO: if you GET to this route while logged in, IT WORKS, IT SHOULDN'T
 @app.route('/login', methods=["GET", "POST"])
 def login():
     """Handle user login and redirect to homepage on success."""
